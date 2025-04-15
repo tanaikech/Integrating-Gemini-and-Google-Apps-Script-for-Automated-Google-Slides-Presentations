@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+  </head>
+
+  <body>
+    <header>
+      <h3 class="header center light-blue-text text-darken-1">
+        Integrating Gemini and Google Apps Script for Automated Google Slides Presentations
+      </h3>
+    </header>
+    <div class="container">
+      <div class="row">
+        <form class="col s12">
+          <div class="row">
+            <div class="input-field col s12">
+              <label for="apiKey">API key</label>
+              <input
+                type="text"
+                name="apiKey"
+                id="apiKey"
+                class="validate"
+                value="<?!= apiKey ?>"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="input-field col s12">
+              <p>
+                <label>
+                  <input class="with-gap" name="group1" type="radio" onclick="generatePresentation()" />
+                  <span>Generate presentation</span>
+                </label>
+              </p>
+              <p>
+                <label>
+                  <input
+                    class="with-gap"
+                    name="group1"
+                    type="radio"
+                    onclick="replaceImages()"
+                  />
+                  <span>Replace placeholders with images</span>
+                </label>
+              </p>
+            </div>
+          </div>
+
+          <div id="inputText"></div>
+
+          <div class="row">
+            <div class="input-field col s12">
+              <div id="status"></div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="input-field col s12">
+              <div class="progress hide" id="progress">
+                <div class="indeterminate"></div>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+    <footer>
+      <div class="footer-copyright center light-blue-text text-darken-1">
+        2025 Copyright <a href="https://tanaikech.github.io/">Tanaike</a>
+      </div>
+    </footer>
+
+    <script>
+    let title = "";
+    function run(func) {
+      const p = document.getElementById("progress");
+      p.className = "progress";
+      document.getElementById("status").innerHTML = "";
+      const ids = ["apiKey", "title", "documentId", "name", "presentationTime", "presentationId", "generateImage", "presentationDesign"];
+      const obj = ids.reduce((o, id) => {
+        const div = document.getElementById(id);
+        o[id] = div ? div.value : "";
+        return o;
+      }, { func });
+      title = obj.title;
+      google.script.run
+        .withSuccessHandler((e) => {
+          p.className = "progress hide";
+          if (e == "Done.") {
+            google.script.host.close();
+          } else {
+            document.getElementById("status").innerHTML = e;
+          }
+        })
+        .doGemini(obj);
+    }
+
+    function generatePresentation() {
+      getTitle();
+      const div = document.getElementById("inputText");
+      div.innerHTML = [
+        `<div class="row"><div class="input-field col s12"><label for="title">Title of presentation</label><input type="text" name="title" id="title" class="validate" required></div></div>`,
+        `<div class="row"><div class="input-field col s12"><label for="documentId">Document ID (Description of the presentation) Presentation can also be generated from only the title.</label><input type="text" name="documentId" id="documentId" class="validate"></div></div>`,
+        `<div class="row"><div class="input-field col s12"><label for="name">Speaker name</label><input type="text" name="name" id="name" class="validate" required></div></div>`,
+        `<div class="row"><div class="input-field col s12"><label for="presentationTime">Presentation time (Minute)</label><input type="number" name="presentationTime" id="presentationTime" class="validate" required></div></div>`,
+        `<div class="row"><div class="input-field col s12"><label for="presentationId">Presentation ID (File ID of Google Slide) When this is empty, the active Google Slide is used.</label><input type="text" name="presentationId" id="presentationId" class="validate"></div></div>`,
+        `<div class="row"><div class="input-field col s12"><select id="generateImage"><option value="false">No</option><option value="true">Yes</option></select><label>Generate images during generating the presentation</label></div></div>`,
+        `<div class="row"><div class="input-field col s12"><select id="presentationDesign"><option value="NORMAL">Normal</option><option value="DARK">Dark</option><option value="COOL">Cool</option></select><label>Whole design of presentation</label></div></div>`,
+        `<div class="row"><div class="input-field col s12"><button class="btn icon-right waves-effect waves-light" type="button" name="action" onclick="run('generatePresentation')">Run<i class="material-icons right">send</i></button></div></div>`,
+      ].join("\n");
+      const elems = document.querySelectorAll('select');
+      const instances = M.FormSelect.init(elems);
+      putTitle();
+    }
+
+    function replaceImages() {
+      getTitle();
+      const div = document.getElementById("inputText");
+      div.innerHTML = [
+        `<div class="row"><div class="input-field col s12"><label for="title">Title of presentation</label><input type="text" name="title" id="title" class="validate" required></div></div>`,
+        `<div class="row"><div class="input-field col s12"><label for="presentationId">Presentation ID (File ID of Google Slide) When this is empty, the active Google Slide is used.</label><input type="text" name="presentationId" id="presentationId" class="validate"></div></div>`,
+        `<div class="row"><div class="input-field col s12"><button class="btn icon-right waves-effect waves-light" type="button" name="action" onclick="run('replaceImages')">Run<i class="material-icons right">send</i></button></div></div>`,
+      ].join("\n");
+      putTitle();
+    }
+
+    function getTitle() {
+      const titleDiv = document.getElementById("title");
+      if (titleDiv) {
+        title = titleDiv.value;
+      }      
+    }
+
+    function putTitle() {
+      const titleDiv = document.getElementById("title");
+      if (title && titleDiv) {
+        titleDiv.value = title;
+      }
+    }
+    </script>
+  </body>
+</html>
