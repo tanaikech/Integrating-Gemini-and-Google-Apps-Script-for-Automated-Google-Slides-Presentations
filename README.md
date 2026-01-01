@@ -250,4 +250,8 @@ function myFunction() {
 
   1. Initial release.
 
+- v1.0.1 (January 1, 2026)
+
+  1. The default model was changed from `models/gemini-3-flash-preview` for generating text and `models/gemini-3-pro-image-preview` for generating image.
+
 [TOP](#top)

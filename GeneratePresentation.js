@@ -1,7 +1,9 @@
 /**
  * Class object for generating presentation using Gemini API.
  * Author: Kanshi Tanaike
- * version 1.0.0
+ * GitHub: https://github.com/tanaikech/Integrating-Gemini-and-Google-Apps-Script-for-Automated-Google-Slides-Presentations
+ * 
+ * version 1.0.1
  * @class
  */
 class GeneratePresentation {
@@ -23,7 +25,7 @@ class GeneratePresentation {
     /** @private */
     this.geminiObjForContent = {
       apiKey,
-      model: "models/gemini-2.0-flash-exp",
+      model: model || "models/gemini-3-flash-preview",
       generationConfig: { responseMimeType: "application/json" },
       tools: [{ googleSearch: {} }],
     };
@@ -31,7 +33,7 @@ class GeneratePresentation {
     /** @private */
     this.geminiObjForImage = {
       apiKey,
-      model: "models/gemini-2.0-flash-exp",
+      model: "models/gemini-3-pro-image-preview",
       exportRawData: true,
       generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
     };
@@ -88,7 +90,7 @@ class GeneratePresentation {
     this.errorProcess_();
 
     /** @private */
-    this.g = new GeminiWithFiles.geminiWithFiles(this.geminiObjForContent);
+    this.g = new GeminiWithFiles(this.geminiObjForContent);
     const q = this.createPrompt_();
 
     // DriveApp.createFile("sample.txt", q);
@@ -109,7 +111,7 @@ class GeneratePresentation {
   replaceTextWithImage() {
     console.log("Start.");
     if (this.dependentGenerateImages) {
-      this.g = new GeminiWithFiles.geminiWithFiles(this.geminiObjForImage);
+      this.g = new GeminiWithFiles(this.geminiObjForImage);
     }
     this.presentation.getSlides().forEach(slide => {
       slide.getPageElements().forEach(p => {
@@ -124,7 +126,7 @@ class GeneratePresentation {
                 prompt = `I am creating a presentation with a title of ${this.title}. ` + prompt;
               }
               if (!this.dependentGenerateImages) {
-                this.g = new GeminiWithFiles.geminiWithFiles(this.geminiObjForImage);
+                this.g = new GeminiWithFiles(this.geminiObjForImage);
               }
               const blob = this.generateImage_(prompt);
               if (blob) {
@@ -156,13 +158,6 @@ class GeneratePresentation {
     }
     if (!this.title) {
       throw new Error("Please set the title of your presentation.");
-    }
-    try {
-      GeminiWithFiles;
-    } catch ({ message }) {
-      if (message.includes("GeminiWithFiles is not defined")) {
-        throw new Error(`Please install GeminiWithFiles of Google Apps Script library. The library key is "1dolXnIeXKz-BH1BlwRDaKhzC2smJcGyVxMxGYhaY2kqiLa857odLXrIC". https://github.com/tanaikech/GeminiWithFiles?tab=readme-ov-file#1-use-geminiwithfiles-as-a-google-apps-script-library`);
-      }
     }
     console.log("Done.");
   }
@@ -448,7 +443,7 @@ class GeneratePresentation {
       throw new Error("Genrated content cannot be used. Please try again.");
     }
     if (this.dependentGenerateImages) {
-      this.g = new GeminiWithFiles.geminiWithFiles(this.geminiObjForImage);
+      this.g = new GeminiWithFiles(this.geminiObjForImage);
     }
     object.pages.forEach(({ objects, note, time }) => {
       const slide = this.presentation.appendSlide();
@@ -469,7 +464,7 @@ class GeneratePresentation {
               args[0] = this.parsedDocImages.get(args[0].trim());
             } else if (this.generateImage) {
               if (!this.dependentGenerateImages) {
-                this.g = new GeminiWithFiles.geminiWithFiles(this.geminiObjForImage);
+                this.g = new GeminiWithFiles(this.geminiObjForImage);
               }
               const blob = this.generateImage_(`I am creating a presentation with a title of ${this.title}. Generate an image from the description of "${args[0]}".`);
               if (blob) {
